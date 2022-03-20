@@ -1,0 +1,7 @@
+C:\Users\BeanPaste\Desktop\TShock4.5.12_Terraria1.4.3.2\ServerPlugins\ZombleMode.dll
+C:\Users\BeanPaste\Desktop\TShock4.5.12_Terraria1.4.3.2\ServerPlugins\ZombleMode.pdb
+D:\Projects\ZombleMode\obj\Debug\ZombleMode.csproj.AssemblyReference.cache
+D:\Projects\ZombleMode\obj\Debug\ZombleMode.csproj.CoreCompileInputs.cache
+D:\Projects\ZombleMode\obj\Debug\ZombleMode.csproj.CopyComplete
+D:\Projects\ZombleMode\obj\Debug\ZombleMode.dll
+D:\Projects\ZombleMode\obj\Debug\ZombleMode.pdb
