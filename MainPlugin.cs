@@ -15,18 +15,11 @@ namespace ZombleMode
     [ApiVersion(2, 1)]
     public class MainPlugin : TerrariaPlugin
     {
-        public MainPlugin(Main game) : base(game)
-        {
-        }
-
+        public MainPlugin(Main game) : base(game){}
         public override string Name => "ZombleMode";
-
         public override Version Version => Assembly.GetExecutingAssembly().GetName().Version;
-
         public override string Author => "豆沙";
-
         public override string Description => "生化模式";
-
         public override void Initialize()
         {
             ServerApi.Hooks.NetGreetPlayer.Register(this,OnJoin);
@@ -35,21 +28,17 @@ namespace ZombleMode
             ServerApi.Hooks.GamePostInitialize.Register(this,OnPostInitialize);
             GetDataHandlers.KillMe += OnKillMe;
             GetDataHandlers.ChestOpen += OnOpenChest;
-            GetDataHandlers.PlayerUpdate += OnPlayerUpdate;
             GetDataHandlers.PlayerSpawn += OnPlayerSpawn;
             GetDataHandlers.TogglePvp += OnChangePVP;
             GetDataHandlers.PlayerTeam += OnChangeTeam;
-            
-            
+            GetDataHandlers.NewProjectile += OnNewProjectile;
             ConfigUtils.LoadConfig();
         }
-
         private void OnPostInitialize(EventArgs args)
         {
             Commands.ChatCommands.Add(new Command("zm.user", ZM,"zm","生化模式"));
             Commands.ChatCommands.Add(new Command("zm.admin", ZMA, "zma", "生化管理"));
         }
-
         private void ZMA(CommandArgs args)
         {
             var plr = args.Player;
@@ -663,28 +652,29 @@ namespace ZombleMode
             }
 
         }
-       
-        private void OnPlayerUpdate(object sender, GetDataHandlers.PlayerUpdateEventArgs args)
+        private void OnNewProjectile(object sender, GetDataHandlers.NewProjectileEventArgs args)
         {
             var plr = ConfigUtils.GetPlayerByName(args.Player.Name);
             ZRoom room = null;
-            if (plr!=null)
+            if (plr != null)
             {
                 room = ConfigUtils.GetRoomByID(plr.CurrentRoomID);
-                if (room!=null&&room.Status==MiniGamesAPI.Enum.RoomStatus.Gaming)
+                if (room != null && room.Status == MiniGamesAPI.Enum.RoomStatus.Gaming)
                 {
-                    if (args.Control.IsUsingItem&&args.Player.TPlayer.HeldItem.ranged&&plr.Character==ZEnum.Human)
+                    if (plr.BeLoaded && args.Player.TPlayer.HeldItem.ranged && plr.Character == ZEnum.Human)
                     {
-                        if (plr.BulletAmount==0)
+                        if (plr.BulletAmount == 0)
                         {
                             plr.BeLoaded = true;
+                            Terraria.Main.projectile[args.Index].active = false;
+                            TSPlayer.All.SendData(PacketTypes.ProjectileDestroy,"",args.Index);
                             plr.SendErrorMessage("上膛中...");
                             if (!plr.BulletTimer.Enabled)
                             {
                                 plr.BulletTimer.Start();
                             }
                         }
-                        else 
+                        else
                         {
                             plr.BulletAmount -= 1;
                         }
@@ -736,7 +726,7 @@ namespace ZombleMode
                 {
                     if (room.Status==MiniGamesAPI.Enum.RoomStatus.Gaming)
                     {
-                        var rand = new Random();
+                        var rand = new Terraria.Utilities.UnifiedRandom();
                         var pack = ConfigUtils.GetPackByID(plr.SelectPackID);
                         plr.Teleport(room.SpawnPoints[rand.Next(0,room.SpawnPoints.Count-1)]);
                         plr.SendInfoMessage("已重生！");
@@ -880,7 +870,6 @@ namespace ZombleMode
             
 
         }
-
         private void OnJoin(GreetPlayerEventArgs args)
         {
             var tsplr = TShock.Players[args.Who];
@@ -893,7 +882,6 @@ namespace ZombleMode
             }
             plr.Player = tsplr;
         }
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -904,7 +892,7 @@ namespace ZombleMode
                 ServerApi.Hooks.GamePostInitialize.Deregister(this, OnPostInitialize);
                 GetDataHandlers.KillMe -= OnKillMe;
                 GetDataHandlers.ChestOpen -= OnOpenChest;
-                GetDataHandlers.PlayerUpdate -= OnPlayerUpdate;
+                GetDataHandlers.NewProjectile -= OnNewProjectile;
                 GetDataHandlers.PlayerSpawn -= OnPlayerSpawn;
                 GetDataHandlers.TogglePvp -= OnChangePVP;
                 GetDataHandlers.PlayerTeam -= OnChangeTeam;

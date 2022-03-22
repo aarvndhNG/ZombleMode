@@ -38,7 +38,7 @@ namespace ZombleMode
             Character = ZEnum.Human;
             KillNames = new List<string>();
             CD = 5;
-            BulletAmount = 60;
+            BulletAmount = 30;
             BeLoaded = false;
             BulletTimer.Elapsed += OnTick;
         }
@@ -107,7 +107,7 @@ namespace ZombleMode
                 SendInfoMessage("你已在此房间中");
             }
         }
-        public void Leave()
+        public new void  Leave()
         {
             var room = ConfigUtils.GetRoomByID(CurrentRoomID);
             if (room==null)

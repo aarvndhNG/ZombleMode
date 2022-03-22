@@ -93,7 +93,24 @@ namespace ZombleMode
 
         public void Dispose()
         {
-            
+            for (int i = Players.Count-1; i>=0; i--)
+            {
+                var plr = Players[i];
+                plr.Teleport(Terraria.Main.spawnTileX,Terraria.Main.spawnTileY);
+                plr.ClearRecord();
+                plr.SendInfoMessage("房间被强制暂停了");
+                plr.SetPVP(false);
+                plr.SetTeam(0);
+                plr.Character = ZEnum.Human;
+                plr.Status = MiniGamesAPI.Enum.PlayerStatus.Waiting;
+                plr.CurrentRoomID = 0;
+                plr.SelectPackID = 0;
+                plr.BackUp.RestoreCharacter(plr);
+                plr.Player.SaveServerCharacter();
+                plr.IsDead = false;
+                plr.IsReady = false;
+                Players.Clear();
+            }
         }
 
         public int GetPlayerCount()
