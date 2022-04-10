@@ -144,6 +144,7 @@ namespace ZombleMode
                         plr.SelectPackID = NormalPackID;
                         var rand = new Random();
                         var pack = ConfigUtils.GetPackByID(plr.SelectPackID);
+                        pack.RestoreCharacter(plr);
                         plr.Teleport(SpawnPoints[rand.Next(0,SpawnPoints.Count - 1)]);
                         plr.SendInfoMessage("已重生！");
                     }
@@ -255,6 +256,7 @@ namespace ZombleMode
             HumanWin = false;
             Status = MiniGamesAPI.Enum.RoomStatus.Waiting;
             Start();
+            TShock.Utils.Broadcast($"生化模式房间[{ID}][{Name}]已重置完毕，可以加入游戏啦！",Color.DarkTurquoise);
         }
 
         public void ShowRoomMemberInfo()

@@ -736,9 +736,18 @@ namespace ZombleMode
                         {
                             plr.SetPVP(false);
                             plr.SetTeam(0);
+                            plr.BulletTimer.Start();
                             plr.SendInfoMessage("已进入观战模式");
                         }
                         
+                    }
+                    else if(room.Status==MiniGamesAPI.Enum.RoomStatus.Selecting)
+                    {
+                        plr.Teleport(room.LobbyPoint);
+                        plr.SetTeam(0);
+                        plr.BackUp.RestoreCharacter(plr);
+                        plr.SendInfoMessage("已将你送回等待房间");
+
                     }
                     else if(room.Status==MiniGamesAPI.Enum.RoomStatus.Waiting)
                     {
@@ -782,7 +791,7 @@ namespace ZombleMode
                 }
                 if (zother.Character == ZEnum.Human && plr.Character == ZEnum.Zomble)//己尸敌人
                 {
-                    if (!zother.Player.ItemInHand.ranged)
+                    if (zother.Player.ItemInHand.ranged)
                     {
                         plr.IsDead = true;
                         plr.SelectPackID = room.ViewerPackID;
@@ -799,18 +808,21 @@ namespace ZombleMode
                 plr.Player.RespawnTimer = room.RespawnTime;
                 plr.Character = ZEnum.Human;
                 plr.BackUp.RestoreCharacter(plr);
+                args.Handled = true;
             }
             else if(!args.Pvp&&room.Status==MiniGamesAPI.Enum.RoomStatus.Selecting)
             {
                 plr.Player.RespawnTimer = room.RespawnTime;
                 plr.IsDead = true;
                 plr.SelectPackID = room.ViewerPackID;
+                args.Handled = true;
             }
             else if (!args.Pvp && room.Status == MiniGamesAPI.Enum.RoomStatus.Gaming)
             {
                 plr.Player.RespawnTimer = room.RespawnTime;
                 //plr.IsDead = true;
                 plr.SelectPackID = room.NormalPackID;
+                plr.Character = ZEnum.Zomble;
                 plr.SendInfoMessage("未知原因死亡，重生后将变成丧尸");
                 args.Handled = true;
             }

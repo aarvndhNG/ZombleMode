@@ -62,13 +62,12 @@ namespace ZombleMode
                 if (CD!=0)
                 {
                     CD -= 1;
-                    SetBuff(23,60);
                 }
                 else
                 {
                     BeLoaded = false;
                     CD = 5;
-                    BulletAmount = 60;
+                    BulletAmount = 30;
                 }
             }
             
