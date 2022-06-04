@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZombleMode", "ZombleMode.cs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniGamesAPI", "..\MiniGamesAPI\MiniGamesAPI\MiniGamesAPI.csproj", "{D5C28D67-B400-47AA-92DD-695159DD7783}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeanPoints-RW", "..\BeanPoints-RW\BeanPoints-RW.csproj", "{EE2A264A-D1A1-487B-996B-D2241FB3252F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D5C28D67-B400-47AA-92DD-695159DD7783}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5C28D67-B400-47AA-92DD-695159DD7783}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5C28D67-B400-47AA-92DD-695159DD7783}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE2A264A-D1A1-487B-996B-D2241FB3252F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE2A264A-D1A1-487B-996B-D2241FB3252F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE2A264A-D1A1-487B-996B-D2241FB3252F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE2A264A-D1A1-487B-996B-D2241FB3252F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

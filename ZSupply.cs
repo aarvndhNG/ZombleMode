@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,16 +26,22 @@ namespace ZombleMode
         {
             Place();
             PlaceItem();
+            //TSPlayer.All.SendTileRect((short)X, (short)Y);
+            Update();
             Completed = true;
         }
         public void Place() 
         {
-            WorldGen.PlaceChest(X, Y, 21, true, 2);
+
+            WorldGen.AddBuriedChest(X,Y);
+            
+            //TSPlayer.All.SendTileRect((short)X, (short)Y, 4,4);
         }
         public void Kill() 
         {
             var id = Chest.FindChest(X,Y);
             if (id!=-1) Chest.DestroyChestDirect(X, Y, id);
+            Update(); //TSPlayer.All.SendTileRect((short)X, (short)Y, 4);
             Completed = false;
         }
         public void PlaceItem() 
@@ -50,6 +57,24 @@ namespace ZombleMode
                     chest.item[i].prefix = Items[i].PrefixId;
                     TSPlayer.All.SendData(PacketTypes.ChestItem, "", id, i);
                 }  
+            }
+        }
+        public void Update() 
+        {
+            int x = Netplay.GetSectionX(X-3);
+            int y = Netplay.GetSectionY(Y-3);
+            int x2 = Netplay.GetSectionX(X+3);
+            int y2 = Netplay.GetSectionY(Y+3);
+            for (int k = 0; k < TShock.Players.Length; k++)
+            {
+                if (TShock.Players[k] == null) { continue; };
+                for (int i = x; i <= y; i++)
+                {
+                    for (int j = x2; j <= y2; j++)
+                    {
+                        Netplay.Clients[k].TileSections[i, j] = false;
+                    }
+                }
             }
         }
     }

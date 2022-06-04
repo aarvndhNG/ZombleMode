@@ -24,31 +24,37 @@ namespace ZombleMode
         public int BulletAmount { get; set; }
         [JsonIgnore]
         public bool BeLoaded { get; set; }
+        [JsonIgnore]
+        public bool isHunter;
+        [JsonIgnore]
+        public bool crystalGiven;
         public List<string> KillNames { get; set; }
         [JsonIgnore]
         public Timer BulletTimer = new Timer(1000);
-        public ZPlayer(int id,TSPlayer plr) 
+        public ZPlayer(int id,TSPlayer plr):base(id, plr)
         {
-            ID = id;
-            Name = plr.Name;
             Player = plr;
-            IsReady = false;
             BackUp = null;
-            Status = MiniGamesAPI.Enum.PlayerStatus.Waiting;
             Character = ZEnum.Human;
             KillNames = new List<string>();
             CD = 5;
             BulletAmount = 30;
             BeLoaded = false;
             BulletTimer.Elapsed += OnTick;
+            isHunter = false;
+            crystalGiven = false;
         }
-        public ZPlayer()
+        public ZPlayer():base()
         {
             CD = 5;
             BulletAmount = 30;
             BeLoaded = false;
             BulletTimer.Elapsed += OnTick;
+            IsDead = false;
             Character = ZEnum.Human;
+            KillNames = new List<string>();
+            isHunter = false;
+            crystalGiven = false;
         }
 
         private void OnTick(object sender, ElapsedEventArgs e)
@@ -98,6 +104,7 @@ namespace ZombleMode
                 SelectPackID = room.HumanPackID;
                 BackUp = new MiniPack(Name,ID);
                 BackUp.CopyFromPlayer(Player);
+                BulletTimer.Start();
                 Teleport(room.LobbyPoint) ;
                 SendSuccessMessage($"你已加入房间 [{room.ID}][{room.Name}]");
             }
@@ -119,6 +126,7 @@ namespace ZombleMode
                 SendInfoMessage("当前房间状态不允许离开");
                 return;
             }
+            BulletTimer.Stop();
             room.Players.Remove(this);
             room.Broadcast($"玩家 {Name} 离开了房间", Color.Crimson);
             CurrentRoomID = 0;
@@ -131,6 +139,11 @@ namespace ZombleMode
             SendSuccessMessage($"你离开了房间 [{room.ID}][{room.Name}]");
             SendBoardMsg("");
             Teleport(new Point(Terraria.Main.spawnTileX,Terraria.Main.spawnTileY));
+        }
+        public void SendCombatMessage(string text,Color color)
+        {
+            TSPlayer.All.SendData(PacketTypes.CreateCombatTextExtended,text,(int)color.packedValue,Player.TPlayer.position.X, Player.TPlayer.position.Y);
+        
         }
     }
 }

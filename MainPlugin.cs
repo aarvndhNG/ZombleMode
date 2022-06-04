@@ -32,6 +32,7 @@ namespace ZombleMode
             GetDataHandlers.TogglePvp += OnChangePVP;
             GetDataHandlers.PlayerTeam += OnChangeTeam;
             GetDataHandlers.NewProjectile += OnNewProjectile;
+            GetDataHandlers.PlayerUpdate += OnPlayerUpdate;
             ConfigUtils.LoadConfig();
         }
         private void OnPostInitialize(EventArgs args)
@@ -139,6 +140,31 @@ namespace ZombleMode
                         plr.SendInfoMessage("请输入数字");
                     }
                     break;
+                case "hp"://设置幽灵猎手背包
+                    if (args.Parameters.Count != 3)
+                    {
+                        plr.SendInfoMessage("指令不正确");
+                        return;
+                    }
+                    if (int.TryParse(args.Parameters[1], out id) && int.TryParse(args.Parameters[2], out count))
+                    {
+                        room = ConfigUtils.GetRoomByID(id);
+                        if (room != null)
+                        {
+                            room.HunterPackID = count;
+                            plr.SendInfoMessage($"成功设置房间(ID：{room.ID})的幽灵猎手背包为{room.HunterPackID}");
+                            ConfigUtils.UpdateSingleRoom(room);
+                        }
+                        else
+                        {
+                            plr.SendInfoMessage("房间不存在");
+                        }
+                    }
+                    else
+                    {
+                        plr.SendInfoMessage("请输入数字");
+                    }
+                    break;
                 case "sgt":
                     if (args.Parameters.Count != 3)
                     {
@@ -175,8 +201,8 @@ namespace ZombleMode
                         room = ConfigUtils.GetRoomByID(id);
                         if (room != null)
                         {
-                            room.SelectTime = count;
-                            plr.SendInfoMessage($"成功设置房间(ID：{room.ID})的选择母体时长为{room.SelectTime}秒");
+                            room.SeletingTime = count;
+                            plr.SendInfoMessage($"成功设置房间(ID：{room.ID})的选择母体时长为{room.SeletingTime}秒");
                             ConfigUtils.UpdateSingleRoom(room);
                         }
                         else
@@ -547,6 +573,7 @@ namespace ZombleMode
                     lines.Add("/zma srp [房间ID] [背包ID] 设置母体背包");
                     lines.Add("/zma snp [房间ID] [背包ID] 设置普通僵尸背包");
                     lines.Add("/zma shp [房间ID] [背包ID] 设置人类背包");
+                    lines.Add("/zma hp [房间ID] [背包ID] 设置猎手背包");
                     lines.Add("/zma svp [房间ID] [背包ID] 设置观战者背包");
                     lines.Add("/zma smp [房间ID] [玩家数] 设置最大玩家数");
                     lines.Add("/zma sdp [房间ID] [玩家数] 设置最小玩家数");
@@ -652,6 +679,27 @@ namespace ZombleMode
             }
 
         }
+        private void OnPlayerUpdate(object sender, GetDataHandlers.PlayerUpdateEventArgs args)
+        {
+            var plr = ConfigUtils.GetPlayerByName(args.Player.Name);
+            ZRoom room = null;
+            if (plr != null)
+            {
+                room = ConfigUtils.GetRoomByID(plr.CurrentRoomID);
+                bool flag = (room != null && room.Status == MiniGamesAPI.Enum.RoomStatus.Gaming && plr.Character==ZEnum.Human&&args.Control.IsUsingItem&&args.Player.TPlayer.HeldItem.netID==29&&!plr.isHunter);
+                if (flag)
+                {
+                    plr.SelectPackID = room.HunterPackID;
+                    plr.Godmode(true);
+                    plr.Firework(1);
+                    var pack = ConfigUtils.GetPackByID(room.HunterPackID);
+                    if (pack != null) plr.RestorePlayerInv(pack);
+                    plr.Godmode(false);
+                    plr.isHunter = true;
+                    room.Broadcast($"玩家 {plr.Name} 变身成为幽灵猎手",Color.Crimson);
+                }
+            }
+        }
         private void OnNewProjectile(object sender, GetDataHandlers.NewProjectileEventArgs args)
         {
             var plr = ConfigUtils.GetPlayerByName(args.Player.Name);
@@ -661,22 +709,48 @@ namespace ZombleMode
                 room = ConfigUtils.GetRoomByID(plr.CurrentRoomID);
                 if (room != null && room.Status == MiniGamesAPI.Enum.RoomStatus.Gaming)
                 {
-                    if (plr.BeLoaded && args.Player.TPlayer.HeldItem.ranged && plr.Character == ZEnum.Human)
+                    if (args.Player.TPlayer.HeldItem.ranged && plr.Character == ZEnum.Human)
                     {
-                        if (plr.BulletAmount == 0)
+                        /*if (plr.BeLoaded)
+                        {
+                            //plr.BeLoaded = true;
+                            Terraria.Main.projectile[args.Index].active = false;
+                            TSPlayer.All.SendData(PacketTypes.ProjectileDestroy, "", args.Index);
+                            plr.SendErrorMessage("上膛中...");
+                        }
+                        else
+                        {
+                            if (plr.BulletAmount==0)
+                            {
+                                plr.BeLoaded = true;
+                                if (!plr.BulletTimer.Enabled)
+                                {
+                                    plr.BulletTimer.Start();
+                                }
+                                return;
+                            }
+                            plr.BulletAmount -= 1;
+                        }*/
+                        if (plr.BulletAmount==0)
                         {
                             plr.BeLoaded = true;
-                            Terraria.Main.projectile[args.Index].active = false;
-                            TSPlayer.All.SendData(PacketTypes.ProjectileDestroy,"",args.Index);
-                            plr.SendErrorMessage("上膛中...");
-                            if (!plr.BulletTimer.Enabled)
-                            {
-                                plr.BulletTimer.Start();
-                            }
+                            var proj = Terraria.Main.projectile[args.Identity];
+                            proj.damage = 0;
+                            proj.knockBack = 0f;
+                            TSPlayer.All.SendData(PacketTypes.ProjectileNew, "", args.Identity);
+                            args.Handled = true;
+                            proj.active = false;
+                            TSPlayer.All.SendData(PacketTypes.ProjectileDestroy, "", args.Identity,proj.owner);
+                            plr.SendCombatMessage("Beloading...",Color.Crimson);
+                            //plr.SendErrorMessage("上膛中...");
+                           /* plr.SendInfoMessage($"index:{args.Index}   id:{args.Identity}");*/
+                            //args.Handled = true;
+
                         }
                         else
                         {
                             plr.BulletAmount -= 1;
+                            plr.SendCombatMessage($"Left: {plr.BulletAmount}", Color.MediumAquamarine);
                         }
                     }
                 }
@@ -724,10 +798,10 @@ namespace ZombleMode
                 room = ConfigUtils.GetRoomByID(plr.CurrentRoomID);
                 if (room!=null)
                 {
+                    var rand = new Terraria.Utilities.UnifiedRandom();
+                    var pack = ConfigUtils.GetPackByID(plr.SelectPackID);
                     if (room.Status==MiniGamesAPI.Enum.RoomStatus.Gaming)
                     {
-                        var rand = new Terraria.Utilities.UnifiedRandom();
-                        var pack = ConfigUtils.GetPackByID(plr.SelectPackID);
                         plr.Teleport(room.SpawnPoints[rand.Next(0,room.SpawnPoints.Count-1)]);
                         plr.SendInfoMessage("已重生！");
                         plr.SetTeam(1);
@@ -736,20 +810,19 @@ namespace ZombleMode
                         {
                             plr.SetPVP(false);
                             plr.SetTeam(0);
-                            plr.BulletTimer.Start();
+                            plr.BulletTimer.Stop();
                             plr.SendInfoMessage("已进入观战模式");
                         }
                         
                     }
-                    else if(room.Status==MiniGamesAPI.Enum.RoomStatus.Selecting)
+                    if(room.Status==MiniGamesAPI.Enum.RoomStatus.Selecting)
                     {
                         plr.Teleport(room.LobbyPoint);
                         plr.SetTeam(0);
-                        plr.BackUp.RestoreCharacter(plr);
                         plr.SendInfoMessage("已将你送回等待房间");
-
+                        pack.RestoreCharacter(plr);
                     }
-                    else if(room.Status==MiniGamesAPI.Enum.RoomStatus.Waiting)
+                    if(room.Status==MiniGamesAPI.Enum.RoomStatus.Waiting||room.Status==MiniGamesAPI.Enum.RoomStatus.Concluding||room.Status==MiniGamesAPI.Enum.RoomStatus.Restoring)
                     {
                         plr.Teleport(room.LobbyPoint);
                         plr.SetPVP(false);
@@ -773,9 +846,82 @@ namespace ZombleMode
         }
         private void OnKillMe(object sender,GetDataHandlers.KillMeEventArgs args)
         {
-            TSPlayer other=null;
+            TSPlayer other = null;
+            ZPlayer zohter = null;
+            ZPlayer victim = ConfigUtils.GetPlayerByName(args.Player.Name);
+            ZRoom targetRoom = null;
+            if (args.PlayerDeathReason._sourcePlayerIndex != -1) 
+            { 
+                other = TShock.Players[args.PlayerDeathReason._sourcePlayerIndex];
+                zohter = ConfigUtils.GetPlayerByName(other.Name);//获取对方的实例化
+            }
+            if (victim!=null&&victim.CurrentRoomID!=0)
+            {
+                targetRoom = ConfigUtils.GetRoomByID(victim.CurrentRoomID);//获取受害者当前房间ID
+            }
+            if (targetRoom == null && victim == null) return;
+            if (args.Pvp)
+            {
+                if (targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Waiting ||
+                    targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Concluding || 
+                    targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Restoring)
+                {
+
+                }
+                if (targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Selecting)
+                {
+                    //死亡就跳转到Gaming时 变成普通僵尸
+                    //先转移回出生点，等待Gaming
+                    //这个一般不会被触发
+                }
+                if (targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Gaming)
+                {
+                    if (zohter == null) return;
+                    if (victim.Character==ZEnum.Human&&zohter.Character==ZEnum.Zomble)
+                    {
+                        victim.Character = ZEnum.Zomble;//角色身份变化
+                        victim.SetTeam(1);
+                        victim.SelectPackID = targetRoom.NormalPackID;
+                        targetRoom.Broadcast($"玩家[{victim.Name}]被[{zohter.Name}]给挠了！变成了感染体!",Color.Crimson);
+                    }
+                    if (victim.Character==ZEnum.Zomble&&zohter.Character==ZEnum.Human)
+                    {
+                        if (zohter.Player.TPlayer.HeldItem.ranged)
+                        {
+                            targetRoom.Broadcast($"感染体 {victim.Name} 被 {zohter.Name} 射杀!",Color.DarkTurquoise);
+                        }
+                        else
+                        {
+                            victim.IsDead = true;
+                            victim.SelectPackID = targetRoom.ViewerPackID;
+                            targetRoom.Broadcast($"勇气可嘉！ 感染体 {victim.Name} 被 {zohter.Name} 刀了! 即将无法复活", Color.DarkTurquoise);
+                        }
+                    }
+                }
+
+            }
+            else 
+            {
+                if (targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Waiting||
+                    targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Concluding|| 
+                    targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Restoring)
+                {
+
+                }
+                if (targetRoom.Status==MiniGamesAPI.Enum.RoomStatus.Selecting|| targetRoom.Status == MiniGamesAPI.Enum.RoomStatus.Gaming)
+                {
+                    victim.IsDead = true;
+                    victim.SelectPackID = targetRoom.ViewerPackID;
+                    victim.SetTeam(0);
+                    targetRoom.Broadcast($"玩家 {victim.Name} 因未知原因死亡,复活后将变成感染体!",Color.DarkTurquoise);
+                    
+                }
+            }
+            args.Player.Spawn(0,targetRoom.RespawnTime);
+            args.Handled = true;
+            /*TSPlayer other=null;
             if (args.PlayerDeathReason._sourcePlayerIndex!=-1) other = TShock.Players[args.PlayerDeathReason._sourcePlayerIndex];
-            var zother = ConfigUtils.GetPlayerByName(other.Name);
+            ZPlayer zother = null;
             var plr = ConfigUtils.GetPlayerByName(args.Player.Name);
             ZRoom room = ConfigUtils.GetRoomByID(plr.CurrentRoomID);
             if (room == null) return;
@@ -826,7 +972,7 @@ namespace ZombleMode
                 plr.SendInfoMessage("未知原因死亡，重生后将变成丧尸");
                 args.Handled = true;
             }
-
+            */
             /*if (plr!=null&&zother!=null&&plr.CurrentRoomID!=0&&plr.CurrentRoomID==zother.CurrentRoomID)
             {
                 room = ConfigUtils.GetRoomByID(plr.CurrentRoomID);
@@ -870,13 +1016,18 @@ namespace ZombleMode
                         room.Players.Remove(plr);
                         room.Broadcast($"玩家[{tsplr.Name}]强制退出了房间", Color.DarkTurquoise);
                     }
-                    plr.BackUp.RestoreCharacter(plr);
+                    if (plr.BackUp!=null)
+                    {
+                        plr.BackUp.RestoreCharacter(plr);
+                    }
+                    
                     plr.BackUp = null;
                     plr.Player = null;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                TShock.Log.ConsoleError(e.ToString());
                 TShock.Log.ConsoleInfo($"玩家 [{tsplr.Name}] 退出服务器时出错");
             }
             

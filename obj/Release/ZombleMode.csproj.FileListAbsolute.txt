@@ -7,10 +7,6 @@ D:\Projects\ZombleMode\bin\Release\MiniGamesAPI.dll
 D:\Projects\ZombleMode\bin\Release\MiniGamesAPI.pdb
 D:\Projects\ZombleMode\obj\Release\ZombleMode.csproj.CopyComplete
 D:\Projects\ZombleMode\obj\Release\ZombleMode.csproj.AssemblyReference.cache
-D:\Projects\ZombleMode\bin\Release\Newtonsoft.Json.dll
-D:\Projects\ZombleMode\bin\Release\OTAPI.dll
-D:\Projects\ZombleMode\bin\Release\TerrariaServer.exe
 D:\Projects\ZombleMode\bin\Release\TShockAPI.dll
-D:\Projects\ZombleMode\bin\Release\Newtonsoft.Json.xml
-D:\Projects\ZombleMode\bin\Release\OTAPI.pdb
-D:\Projects\ZombleMode\bin\Release\TerrariaServer.pdb
+D:\Projects\ZombleMode\bin\Release\MySql.Data.dll
+D:\Projects\ZombleMode\bin\Release\Mono.Data.Sqlite.dll

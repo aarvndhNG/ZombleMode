@@ -14,17 +14,17 @@ namespace ZombleMode
 {
     public class ZRoom : MiniRoom, IRoom
     {
-        public int MaxPlayer { get; set; }
-        public int MinPlayer { get; set; }
-        public int WaitingTime { get; set; }
-        public int GamingTime { get; set; }
-        public int SelectTime { get; set; }
+        [JsonIgnore]
+        public bool hunterAppeared;
+        [JsonIgnore]
+        public int leftToHunter; 
         public int RespawnTime { get; set; }
         public int RootZombleAmount { get; set; }
         public int HumanPackID { get; set; }
         public int NormalPackID { get; set; }
         public int ViewerPackID { get; set; }
         public int RootPackID { get; set; }
+        public int HunterPackID { get; set; }
         public bool HumanWin { get; set; }
         public Point LobbyPoint { get; set; }
         public List<Point> SpawnPoints { get; set; }
@@ -42,11 +42,15 @@ namespace ZombleMode
             Status = MiniGamesAPI.Enum.RoomStatus.Waiting;
             SpawnPoints = new List<Point>();
             Players = new List<ZPlayer>();
+            leftToHunter = 0;
+            hunterAppeared = false;
             Initialize();
             Start();
         }
         public ZRoom() 
         {
+            leftToHunter = 0;
+            hunterAppeared = false;
             SpawnPoints = new List<Point>();
             Players = new List<ZPlayer>();
             Initialize();
@@ -80,13 +84,15 @@ namespace ZombleMode
                 if (!plr.Player.Dead) plr.Teleport(LobbyPoint);
                 plr.SetTeam(0);
                 plr.SetPVP(false);
-                plr.BulletTimer.Stop();
                 plr.CD = 5;
                 plr.BulletAmount = 30;
+                plr.BeLoaded = false;
                 plr.BackUp.RestoreCharacter(plr);
                 plr.Player.SaveServerCharacter();
                 plr.Character = ZEnum.Human;
                 plr.Status = MiniGamesAPI.Enum.PlayerStatus.Waiting;
+                plr.isHunter = false;
+                plr.crystalGiven = false;
             }
             Status = MiniGamesAPI.Enum.RoomStatus.Restoring;
         }
@@ -130,9 +136,11 @@ namespace ZombleMode
         {
             ShowRoomMemberInfo();
             if (Status != MiniGamesAPI.Enum.RoomStatus.Gaming) return;
-            if (SelectTime==0)
+            if (SeletingTime==0)
             {
                 selectTimer.Stop();
+                hunterAppeared = false;
+                leftToHunter = RootZombleAmount;
                 SelectZomble();
                 for (int i = Players.Count-1; i>=0; i--)
                 {
@@ -150,19 +158,21 @@ namespace ZombleMode
                     }
                     plr.SetPVP(true);
                     plr.Godmode(false);
+                    plr.SendInfoMessage($"本局幽灵猎手数量为:{leftToHunter}");
                     if (plr.Character==ZEnum.Zomble)
                     {
                         plr.SetTeam(1);//设置红队
                     }
                     else { plr.SetTeam(3); }//设置蓝队
                 }
+                
                 Broadcast("母体出现了！",Color.Crimson);
                 gamingTimer.Start();
             }
             else
             {
-                Broadcast($"母体还有 {SelectTime} 秒后出现,请留意你身边的人..",Color.DarkTurquoise);
-                SelectTime--;
+                Broadcast($"母体还有 {SeletingTime} 秒后出现,请留意你身边的人..",Color.DarkTurquoise);
+                SeletingTime--;
             }
         }
 
@@ -203,6 +213,20 @@ namespace ZombleMode
                     Status = MiniGamesAPI.Enum.RoomStatus.Concluding;
                     Conclude();
                     Restore();
+                }
+                if (humen.Count==leftToHunter&&!hunterAppeared)
+                {
+                    for (int i = 0; i < humen.Count; i++)
+                    {
+                        var plr = humen[i];
+                        if (!plr.crystalGiven)
+                        {
+                            plr.Player.GiveItem(29, 1);
+                            plr.crystalGiven = true ;
+                        }
+                        plr.SendInfoMessage("你可以变身成为幽灵猎手,使用给予的生命水晶即可变身");
+                    }
+                    hunterAppeared = true;
                 }
                 if (GamingTime==60) Broadcast("游戏还剩 1 分钟..",Color.DarkTurquoise);
                 GamingTime--;
@@ -252,8 +276,10 @@ namespace ZombleMode
             RootZombleAmount = room.RootZombleAmount;
             HumanPackID = room.HumanPackID;
             NormalPackID = room.NormalPackID;
-            SelectTime = room.SelectTime;
+            SeletingTime = room.SeletingTime;
             HumanWin = false;
+            hunterAppeared = false;
+            leftToHunter = 0;
             Status = MiniGamesAPI.Enum.RoomStatus.Waiting;
             Start();
             TShock.Utils.Broadcast($"生化模式房间[{ID}][{Name}]已重置完毕，可以加入游戏啦！",Color.DarkTurquoise);
@@ -272,8 +298,9 @@ namespace ZombleMode
                 for (int i = Players.Count - 1; i >= 0; i--)
                 {
                     var plr = Players[i];
-                    roomInfo.AppendLine($"[{plr.Name}] [{(plr.Character==ZEnum.Zomble?"感染体":"泰拉人")}]");
+                    roomInfo.AppendLine($"[{plr.Name}] [{(plr.Character==ZEnum.Zomble?"感染体":(plr.isHunter?"幽灵猎手":"泰拉人"))}]");
                 }
+
             }
             if (Status==MiniGamesAPI.Enum.RoomStatus.Waiting)
             {
@@ -329,6 +356,10 @@ namespace ZombleMode
             var rand = new Terraria.Utilities.UnifiedRandom();
             var seed = rand.Next(0,Players.Where(p=>p.Character==ZEnum.Human).Count()-1);
             var plr = Players[seed];
+            if (plr.Character == ZEnum.Zomble) { 
+                SelectZomble();
+                return;
+            }
             plr.Character = ZEnum.Zomble;
             plr.SelectPackID = RootPackID;
             var pack = ConfigUtils.GetPackByID(plr.SelectPackID);
