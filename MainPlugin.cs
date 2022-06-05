@@ -687,6 +687,7 @@ namespace ZombleMode
             {
                 room = ConfigUtils.GetRoomByID(plr.CurrentRoomID);
                 bool flag = (room != null && room.Status == MiniGamesAPI.Enum.RoomStatus.Gaming && plr.Character==ZEnum.Human&&args.Control.IsUsingItem&&args.Player.TPlayer.HeldItem.netID==29&&!plr.isHunter);
+                //bool flag_2 = (room!=null&&(room.Status==MiniGamesAPI.Enum.RoomStatus.Gaming|| room.Status == MiniGamesAPI.Enum.RoomStatus.Selecting)&&plr.Character==ZEnum.Human&&plr.BeLoaded&&args.Control.IsUsingItem&& args.Player.TPlayer.HeldItem.ranged);
                 if (flag)
                 {
                     plr.SelectPackID = room.HunterPackID;
@@ -698,6 +699,11 @@ namespace ZombleMode
                     plr.isHunter = true;
                     room.Broadcast($"玩家 {plr.Name} 变身成为幽灵猎手",Color.Crimson);
                 }
+                /*if (flag_2)
+                {
+                    plr.SetBuff(23,60);
+                    plr.SendInfoMessage("触发");
+                }*/
             }
         }
         private void OnNewProjectile(object sender, GetDataHandlers.NewProjectileEventArgs args)
@@ -711,34 +717,11 @@ namespace ZombleMode
                 {
                     if (args.Player.TPlayer.HeldItem.ranged && plr.Character == ZEnum.Human)
                     {
-                        /*if (plr.BeLoaded)
-                        {
-                            //plr.BeLoaded = true;
-                            Terraria.Main.projectile[args.Index].active = false;
-                            TSPlayer.All.SendData(PacketTypes.ProjectileDestroy, "", args.Index);
-                            plr.SendErrorMessage("上膛中...");
-                        }
-                        else
-                        {
-                            if (plr.BulletAmount==0)
-                            {
-                                plr.BeLoaded = true;
-                                if (!plr.BulletTimer.Enabled)
-                                {
-                                    plr.BulletTimer.Start();
-                                }
-                                return;
-                            }
-                            plr.BulletAmount -= 1;
-                        }*/
                         if (plr.BulletAmount==0)
                         {
                             plr.BeLoaded = true;
+                            plr.SetBuff(23, 30);
                             var proj = Terraria.Main.projectile[args.Identity];
-                            proj.damage = 0;
-                            proj.knockBack = 0f;
-                            TSPlayer.All.SendData(PacketTypes.ProjectileNew, "", args.Identity);
-                            args.Handled = true;
                             proj.active = false;
                             TSPlayer.All.SendData(PacketTypes.ProjectileDestroy, "", args.Identity,proj.owner);
                             plr.SendCombatMessage("Beloading...",Color.Crimson);
