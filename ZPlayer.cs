@@ -61,7 +61,7 @@ namespace ZombleMode
         {
             if (IsDead)
             {
-                SetBuff(10);
+                SetBuff(10,3600);
             }
             if (BeLoaded)
             {
